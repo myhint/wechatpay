@@ -14,6 +14,9 @@ repositories {
 }
 
 dependencies {
+    compile 'org.jdom:jdom2'
+    compile 'org.apache.commons:commons-lang3'
+    compile 'org.apache.httpcomponents:httpclient'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     compileOnly 'org.springframework.boot:spring-boot-configuration-processor'

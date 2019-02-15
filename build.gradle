@@ -15,8 +15,21 @@ repositories {
 
 dependencies {
     compile 'org.jdom:jdom2'
+    compile 'org.redisson:redisson:3.9.0'
     compile 'org.apache.commons:commons-lang3'
     compile 'org.apache.httpcomponents:httpclient'
+    compile 'io.springfox:springfox-swagger2:2.9.2'
+    compile 'io.springfox:springfox-swagger-ui:2.9.2'
+    compile 'com.github.binarywang:weixin-java-pay:3.2.0'
+
+    compile 'org.springframework.boot:spring-boot-starter-jdbc'
+    compile 'org.springframework.boot:spring-boot-starter-json'
+    compile 'org.springframework.boot:spring-boot-starter-data-redis'
+    compile 'org.springframework.boot:spring-boot-configuration-processor'
+    compile 'org.springframework.session:spring-session-core:2.1.1.RELEASE'
+
+    runtime 'mysql:mysql-connector-java'
+    
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     compileOnly 'org.springframework.boot:spring-boot-configuration-processor'

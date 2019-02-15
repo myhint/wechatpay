@@ -1,15 +1,21 @@
 package com.example.wechatpay.service.common.wxpay.impl;
 
 import com.example.wechatpay.config.wechat.pay.WxPayProperties;
+import com.example.wechatpay.event.pay.WxPayProductEvent;
 import com.example.wechatpay.exception.CommonBusinessException;
+import com.example.wechatpay.service.app.order.AppOrderService;
 import com.example.wechatpay.service.common.wxpay.WxPayService;
 import com.example.wechatpay.utils.wxpay.WxPayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.util.Map;
 import java.util.SortedMap;
@@ -31,6 +37,12 @@ public class WxPayServiceImpl implements WxPayService {
 
     @Autowired
     private WxPayProperties wxPayProperties;
+
+    @Autowired
+    private AppOrderService appOrderService;
+
+    @Autowired
+    private ApplicationContext applicationContext;
 
 
     /**
@@ -89,6 +101,120 @@ public class WxPayServiceImpl implements WxPayService {
 
         // 二次签名（小程序正式调起微信支付必填参数）
         return wxPayUtils.createSign2(res, wxPayProperties.getMchKey());
+    }
+
+    /**
+     * @return void
+     * @throws
+     * @description 微信支付异步通知
+     * @params [request, response]
+     */
+    @Override
+    public void payNotify(HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+        // 响应给微信的Xml格式数据
+        String resXml = "";
+
+        logger.info("WxPayServiceImpl.payNotify ========= 微信支付异步回调START ========= ");
+
+        // 预先设定返回的 response 类型为 xml
+        response.setHeader("Content-type", "application/xml");
+
+        // 读取参数，解析Xml为map
+        Map<String, String> map = wxPayUtils.transferXmlToMap(wxPayUtils.readRequest(request));
+
+        // 转换为有序 map，校验签名是否正确
+        boolean isSignSuccess = wxPayUtils.checkSign(new TreeMap<>(map), wxPayProperties.getMchKey());
+
+        if (isSignSuccess) {
+            // 签名校验成功，说明是微信服务器发出的数据
+            String orderSn = map.get("out_trade_no");
+            String transactionId = map.get("transaction_id");
+
+            logger.info("WxPayServiceImpl.payNotify ============ 订单支付异步回调成功，订单号：[{}]，外部订单号：[{}] " +
+                    "============ ", orderSn, transactionId);
+
+            // 判断该订单是否已经被接收处理过
+            if (appOrderService.hasProcessed(orderSn)) {
+                resXml = checkSuccess();
+                BufferedOutputStream out = new BufferedOutputStream(response.getOutputStream());
+                out.write(resXml.getBytes());
+                out.flush();
+                out.close();
+                return;
+            }
+
+            if (map.get("return_code").equals("SUCCESS")) {
+                // 支付成功
+                if (map.get("result_code").equals("SUCCESS")) {
+
+                    // 发布事件=>支付成功
+                    applicationContext.publishEvent(new WxPayProductEvent(new Object(), orderSn, true, transactionId));
+
+                    logger.info("WxPayServiceImpl.payNotify ============ 订单支付成功，事件发布成功，此次订单号：[{}] " +
+                            "============ ", orderSn);
+
+                    // 修改订单状态
+                    appOrderService.completeOrder(orderSn, transactionId);
+
+                } else {
+                    // 支付失败 => 修改订单状态为"交易异常"
+                    appOrderService.failOrder(orderSn);
+                }
+            }
+
+            resXml = checkSuccess();
+        } else {
+            // 签名校验失败（原因分析：可能不是微信服务器发出的数据或者其他）
+            resXml = checkFail();
+        }
+
+        // 处理业务完毕
+        BufferedOutputStream out = new BufferedOutputStream(response.getOutputStream());
+        out.write(resXml.getBytes());
+        out.flush();
+        out.close();
+    }
+
+    /**
+     * @return void
+     * @throws
+     * @description 微信退款异步通知
+     * @params [request, response]
+     */
+    @Override
+    public void refundNotify(HttpServletRequest request, HttpServletResponse response) {
+
+    }
+
+    /**
+     * @return java.lang.String
+     * @throws
+     * @description 通知校验成功
+     * @params []
+     */
+    private String checkSuccess() {
+
+        return "<xml>\n" +
+                "\n" +
+                "  <return_code><![CDATA[SUCCESS]]></return_code>\n" +
+                "  <return_msg><![CDATA[OK]]></return_msg>\n" +
+                "</xml>";
+    }
+
+    /**
+     * @return java.lang.String
+     * @throws
+     * @description 通知校验失败
+     * @params []
+     */
+    private String checkFail() {
+
+        return "<xml>\n" +
+                "\n" +
+                "  <return_code><![CDATA[FAIL]]></return_code>\n" +
+                "  <return_msg><![CDATA[]]></return_msg>\n" +
+                "</xml>";
     }
 
 }

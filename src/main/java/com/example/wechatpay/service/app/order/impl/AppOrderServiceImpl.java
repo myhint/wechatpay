@@ -1,5 +1,6 @@
 package com.example.wechatpay.service.app.order.impl;
 
+import com.example.wechatpay.dto.order.items.OrderItemsDTO;
 import com.example.wechatpay.dto.order.product.ProductOrderDTO;
 import com.example.wechatpay.response.app.AppUserResponse;
 import com.example.wechatpay.response.common.wxpay.WxPayArgsResponse;
@@ -92,6 +93,52 @@ public class AppOrderServiceImpl implements AppOrderService {
         // TODO 8.将订单相关数据存放至缓存中，如Redis，为微信异步回调接口的业务逻辑处理做准备
 
         // 第8步，应按实际业务需要，灵活处理
+
+        return null;
+    }
+
+    /**
+     * @return java.lang.Boolean
+     * @throws
+     * @description 判断订单是否已被处理过，防止重复处理
+     * @params [orderSn]
+     */
+    @Override
+    public Boolean hasProcessed(String orderSn) {
+
+        return null;
+    }
+
+    /**
+     * @return void
+     * @throws
+     * @description 订单已完成
+     * @params [orderSn, transactionId]
+     */
+    @Override
+    public void completeOrder(String orderSn, String transactionId) {
+
+    }
+
+    /**
+     * @return void
+     * @throws
+     * @description 订单交易失败
+     * @params [orderSn]
+     */
+    @Override
+    public void failOrder(String orderSn) {
+
+    }
+
+    /**
+     * @return com.example.wechatpay.dto.order.items.OrderItemsDTO
+     * @throws
+     * @description 获取订单明细项信息
+     * @params [orderSn, transactionId]
+     */
+    @Override
+    public OrderItemsDTO getOrderItem(String orderSn, String transactionId) {
 
         return null;
     }

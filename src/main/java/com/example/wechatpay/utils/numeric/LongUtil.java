@@ -1,6 +1,5 @@
 package com.example.wechatpay.utils.numeric;
 
-import org.jooq.types.ULong;
 
 /**
  * Created by Blake on 2018/7/19
@@ -35,18 +34,6 @@ public class LongUtil {
         }
         try {
             return Long.valueOf(value.toString());
-        } catch (Exception e) {
-            return 0L;
-        }
-    }
-
-    public static long toLong(ULong value) {
-
-        if (value == null) {
-            return 0L;
-        }
-        try {
-            return value.longValue();
         } catch (Exception e) {
             return 0L;
         }

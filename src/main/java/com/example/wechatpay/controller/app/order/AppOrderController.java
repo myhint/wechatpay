@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 
 /**
  * @Description App 订单控制层
@@ -25,7 +26,8 @@ public class AppOrderController {
     private AppOrderService appOrderService;
 
     @PostMapping("/product/user")
-    public WxPayArgsResponse orderProduct(@RequestParam String orderJsonInfo, HttpServletRequest request) {
+    public WxPayArgsResponse orderProduct(@RequestParam String orderJsonInfo, HttpServletRequest request)
+            throws IOException {
 
         return appOrderService.orderProduct(orderJsonInfo, request, new AppUserResponse());
     }

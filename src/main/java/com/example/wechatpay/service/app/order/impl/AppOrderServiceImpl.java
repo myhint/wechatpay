@@ -144,6 +144,29 @@ public class AppOrderServiceImpl implements AppOrderService {
     }
 
     /**
+     * @return java.lang.Boolean
+     * @throws
+     * @description 判断付款记录是否存在
+     * @params [transactionId]
+     */
+    @Override
+    public Boolean existsPayRecord(String transactionId) {
+
+        return null;
+    }
+
+    /**
+     * @return void
+     * @throws
+     * @description 修改订单状态
+     * @params [outRefundNo, outTradeNo]
+     */
+    @Override
+    public void switchRefundStatus(String outRefundNo, String outTradeNo) {
+
+    }
+
+    /**
      * @return WxPayArgsResponse
      * @throws
      * @description 组装微信支付API发起请求需要的数据项

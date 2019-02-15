@@ -33,4 +33,14 @@ public interface AppOrderService {
      * 获取订单明细项信息
      */
     OrderItemsDTO getOrderItem(String orderSn, String transactionId);
+
+    /**
+     * 判断付款记录是否存在
+     */
+    Boolean existsPayRecord(String transactionId);
+
+    /**
+     * 修改订单状态
+     */
+    void switchRefundStatus(String outRefundNo, String outTradeNo);
 }

@@ -2,10 +2,13 @@ package com.example.wechatpay.service.common.wxpay.impl;
 
 import com.example.wechatpay.config.wechat.pay.WxPayProperties;
 import com.example.wechatpay.event.pay.WxPayProductEvent;
+import com.example.wechatpay.event.refund.WxRefundProdEvent;
 import com.example.wechatpay.exception.CommonBusinessException;
 import com.example.wechatpay.service.app.order.AppOrderService;
 import com.example.wechatpay.service.common.wxpay.WxPayService;
+import com.example.wechatpay.utils.jackson.JacksonUtil;
 import com.example.wechatpay.utils.wxpay.WxPayUtils;
+import com.github.binarywang.wxpay.bean.notify.WxPayRefundNotifyResult;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +19,10 @@ import org.springframework.stereotype.Service;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -46,7 +52,7 @@ public class WxPayServiceImpl implements WxPayService {
 
 
     /**
-     * @return java.util.Map<java.lang.String,java.lang.Object>
+     * @return java.util.Map<java.lang.String   ,   java.lang.Object>
      * @throws
      * @description 组装微信支付API必需数据项
      * @params [orderSn, totalFee, body, ipAddress, openId]
@@ -184,6 +190,115 @@ public class WxPayServiceImpl implements WxPayService {
      */
     @Override
     public void refundNotify(HttpServletRequest request, HttpServletResponse response) {
+
+        logger.info("WxPayServiceImpl.refundNotify ========= 微信退款异步回调START ========= ");
+
+        // 响应给微信的Xml格式数据
+        String resXml = "";
+        InputStream inStream;
+
+        try {
+            inStream = request.getInputStream();
+            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int len = 0;
+
+            while ((len = inStream.read(buffer)) != -1) {
+                outStream.write(buffer, 0, len);
+            }
+
+            // 获取微信调用我们notify_url的返回信息
+            String result = new String(outStream.toByteArray(), StandardCharsets.UTF_8);
+
+            logger.info("WxPayServiceImpl.refundNotify ========== 微信退款异步通知信息：[{}] ========== ", result);
+
+            // 关闭流
+            outStream.close();
+            inStream.close();
+
+            // xml转换为map
+            Map<String, String> map = wxPayUtils.transferXmlToMap(result);
+
+            if ("SUCCESS".equalsIgnoreCase(map.get("return_code"))) {
+
+                logger.info("WxPayServiceImpl.refundNotify ========== 微信退款通知成功返回 ========== ");
+
+                /**
+                 * 解密方式
+                 * 解密步骤如下：
+                 * （1）对加密串A做base64解码，得到加密串B
+                 * （2）对商户key做md5，得到32位小写key* ( key设置路径：
+                 *      微信商户平台(pay.weixin.qq.com)-->账户设置-->API安全-->密钥设置 )
+                 * （3）用key*对加密串B做AES-256-ECB解密（PKCS7Padding）
+                 */
+
+                WxPayRefundNotifyResult refundResult = WxPayRefundNotifyResult.fromXML(result, wxPayProperties.getMchKey());
+
+                WxPayRefundNotifyResult.ReqInfo reqInfo = refundResult.getReqInfo();
+
+                logger.info("WxPayServiceImpl.refundNotify ========== 微信退款通知成功返回reqInfoStr：[{}] ========== ", JacksonUtil.toJSon(reqInfo));
+
+                // 商户退款单号
+                String outRefundNo = reqInfo.getOutRefundNo();
+                // 退款状态
+                String refundStatus = reqInfo.getRefundStatus();
+                // 商户订单号
+                String outTradeNo = reqInfo.getOutTradeNo();
+                // 微信订单号
+                String transactionId = reqInfo.getTransactionId();
+
+                logger.info("WxPayServiceImpl.refundNotify =========== 商户退款订单号：[{}],商户付款单号：[{}]===========",
+                        outRefundNo, outTradeNo);
+
+                // 退款成功
+                if ("SUCCESS".equals(refundStatus)) {
+                    // 微信退款通知校验成功
+                    resXml = checkSuccess();
+
+                    // 根据付款单号判断付款记录是否存在
+                    if (appOrderService.existsPayRecord(transactionId)) {
+
+                        // 修改订单（支付订单和退订单）状态
+                        appOrderService.switchRefundStatus(outRefundNo, outTradeNo);
+
+                        // 发布退款成功事件通知
+                        applicationContext.publishEvent(new WxRefundProdEvent(new Object(), transactionId, true, outTradeNo));
+
+                    } else {
+                        throw new CommonBusinessException("支付订单不存在或原订单已退款成功！");
+                    }
+                } else {
+                    // 微信退款通知校验失败
+                    resXml = checkFail();
+
+                    // 根据付款单号判断付款记录是否存在
+                    if (appOrderService.existsPayRecord(transactionId)) {
+                        // 修改订单状态
+                        appOrderService.switchRefundStatus(outRefundNo, outTradeNo);
+                    } else {
+                        throw new CommonBusinessException("支付订单不存在");
+                    }
+                }
+
+            } else {
+                logger.error("WxPayServiceImpl.refundNotify ========== 微信退款发生错误，错误原因：{} =========="
+                        + map.get("return_msg"));
+
+                resXml = checkFail();
+            }
+        } catch (Exception e) {
+            logger.error("WxPayServiceImpl.refundNotify ========== refund:微信退款回调发生异常：{} ==========", e);
+        } finally {
+            try {
+                // 处理业务完毕
+                BufferedOutputStream out = new BufferedOutputStream(response.getOutputStream());
+                out.write(resXml.getBytes());
+                out.flush();
+                out.close();
+            } catch (IOException e) {
+                logger.error("WxPayServiceImpl.refundNotify ========== refund:微信退款回调，处理数据流发生异常：{} ==========", e);
+            }
+        }
 
     }
 

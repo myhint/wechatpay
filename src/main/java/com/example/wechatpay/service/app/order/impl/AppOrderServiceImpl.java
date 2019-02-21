@@ -2,6 +2,7 @@ package com.example.wechatpay.service.app.order.impl;
 
 import com.example.wechatpay.dto.order.items.OrderItemsDTO;
 import com.example.wechatpay.dto.order.product.ProductOrderDTO;
+import com.example.wechatpay.response.app.AppOrderResponse;
 import com.example.wechatpay.response.app.AppUserResponse;
 import com.example.wechatpay.response.common.wxpay.WxPayArgsResponse;
 import com.example.wechatpay.service.app.order.AppOrderService;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -164,6 +166,30 @@ public class AppOrderServiceImpl implements AppOrderService {
     @Override
     public void switchRefundStatus(String outRefundNo, String outTradeNo) {
 
+    }
+
+    /**
+     * @return java.math.BigDecimal
+     * @throws
+     * @description 获取订单总价
+     * @params [transactionId, orderId]
+     */
+    @Override
+    public BigDecimal getTotalFee(String transactionId, Long orderId) {
+
+        return null;
+    }
+
+    /**
+     * @return com.example.wechatpay.response.app.AppOrderResponse
+     * @throws
+     * @description 获取订单信息
+     * @params [transactionId]
+     */
+    @Override
+    public AppOrderResponse getOrderInfoByTransactionId(String transactionId) {
+
+        return null;
     }
 
     /**

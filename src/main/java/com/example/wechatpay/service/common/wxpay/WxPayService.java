@@ -1,5 +1,7 @@
 package com.example.wechatpay.service.common.wxpay;
 
+import com.example.wechatpay.request.common.WxRefundRequest;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -22,5 +24,10 @@ public interface WxPayService {
      * 微信退款异步通知
      */
     void refundNotify(HttpServletRequest request, HttpServletResponse response);
+
+    /**
+     * 微信退款请求
+     */
+    Map refundOrder(WxRefundRequest refundRequest, HttpServletRequest request, HttpServletResponse response) throws IOException;
 
 }

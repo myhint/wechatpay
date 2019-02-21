@@ -1,14 +1,19 @@
 package com.example.wechatpay.controller.app.wxpay;
 
+import com.example.wechatpay.request.common.WxRefundRequest;
 import com.example.wechatpay.service.common.wxpay.WxPayService;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * @Description 微信支付 控制层
@@ -40,9 +45,11 @@ public class AppWxPayController {
 
     @ApiOperation(value = "微信退款申请")
     @PostMapping("/refund")
-    public void refundOrder() {
+    public Map refundOrder(HttpServletRequest request, HttpServletResponse response,
+                           @RequestBody @Valid WxRefundRequest refundRequest)
+            throws IOException {
 
-
+        return wxPayService.refundOrder(refundRequest, request, response);
     }
 
 }

@@ -1,6 +1,5 @@
 package com.example.wechatpay.event.refund;
 
-import lombok.Data;
 import org.springframework.context.ApplicationEvent;
 
 /**
@@ -9,7 +8,6 @@ import org.springframework.context.ApplicationEvent;
  * @Date 2018-12-27 11:07
  * @Version 1.0
  */
-@Data
 public class WxRefundProdEvent extends ApplicationEvent {
 
     // 第三方订单号
@@ -33,4 +31,27 @@ public class WxRefundProdEvent extends ApplicationEvent {
         this.orderSn = orderSn;
     }
 
+    public String getTransactionId() {
+        return transactionId;
+    }
+
+    public void setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
+    }
+
+    public Boolean getRefundStatus() {
+        return refundStatus;
+    }
+
+    public void setRefundStatus(Boolean refundStatus) {
+        this.refundStatus = refundStatus;
+    }
+
+    public String getOrderSn() {
+        return orderSn;
+    }
+
+    public void setOrderSn(String orderSn) {
+        this.orderSn = orderSn;
+    }
 }

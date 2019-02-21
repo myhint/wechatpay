@@ -1,6 +1,5 @@
 package com.example.wechatpay.event.pay;
 
-import lombok.Data;
 import org.springframework.context.ApplicationEvent;
 
 /**
@@ -9,7 +8,6 @@ import org.springframework.context.ApplicationEvent;
  * @Date 2018-12-17 14:53
  * @Version 1.0
  */
-@Data
 public class WxPayProductEvent extends ApplicationEvent {
 
     // 订单号
@@ -33,4 +31,27 @@ public class WxPayProductEvent extends ApplicationEvent {
         this.transactionId = transactionId;
     }
 
+    public String getOrderSn() {
+        return orderSn;
+    }
+
+    public void setOrderSn(String orderSn) {
+        this.orderSn = orderSn;
+    }
+
+    public Boolean getPayStatus() {
+        return payStatus;
+    }
+
+    public void setPayStatus(Boolean payStatus) {
+        this.payStatus = payStatus;
+    }
+
+    public String getTransactionId() {
+        return transactionId;
+    }
+
+    public void setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
+    }
 }
